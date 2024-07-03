@@ -1,9 +1,11 @@
 package leaves
 
 import (
+	"context"
+	"errors"
 	"math"
 
-	"github.com/dmitryikh/leaves/util"
+	"github.com/manujz/leaves/util"
 )
 
 const (
@@ -28,7 +30,7 @@ type lgNode struct {
 }
 
 type lgTree struct {
-	nodes         []lgNode
+	nodes         []*lgNode
 	leafValues    []float64
 	catBoundaries []uint32
 	catThresholds []uint32
@@ -71,24 +73,29 @@ func (t *lgTree) decision(node *lgNode, fval float64) bool {
 	return t.numericalDecision(node, fval)
 }
 
-func (t *lgTree) predict(fvals []float64) (float64, uint32) {
+func (t *lgTree) predict(ctx context.Context, fvals []float64) (float64, uint32, error) {
 	if len(t.nodes) == 0 {
-		return t.leafValues[0], 0
+		return t.leafValues[0], 0, nil
 	}
 	idx := uint32(0)
-	for {
-		node := &t.nodes[idx]
-		left := t.decision(node, fvals[node.Feature])
-		if left {
-			if node.Flags&leftLeaf > 0 {
-				return t.leafValues[node.Left], node.Left
+	select {
+	case <-ctx.Done():
+		return -1, 0, errors.New("context cancelled")
+	default:
+		for {
+			node := t.nodes[idx]
+			left := fvals[node.Feature] <= node.Threshold
+			if left {
+				if node.Flags&leftLeaf > 0 {
+					return t.leafValues[node.Left], node.Left, nil
+				}
+				idx = node.Left
+			} else {
+				if node.Flags&rightLeaf > 0 {
+					return t.leafValues[node.Right], node.Right, nil
+				}
+				idx++
 			}
-			idx = node.Left
-		} else {
-			if node.Flags&rightLeaf > 0 {
-				return t.leafValues[node.Right], node.Right
-			}
-			idx++
 		}
 	}
 }
@@ -116,16 +123,16 @@ func isZero(fval float64) bool {
 	return (fval > -zeroThreshold && fval <= zeroThreshold)
 }
 
-func categoricalNode(feature uint32, missingType uint8, threshold uint32, catType uint8) lgNode {
-	node := lgNode{}
+func categoricalNode(feature uint32, missingType uint8, threshold uint32, catType uint8) *lgNode {
+	node := new(lgNode)
 	node.Feature = feature
 	node.Flags = categorical | missingType | catType
 	node.Threshold = float64(threshold)
 	return node
 }
 
-func numericalNode(feature uint32, missingType uint8, threshold float64, defaultType uint8) lgNode {
-	node := lgNode{}
+func numericalNode(feature uint32, missingType uint8, threshold float64, defaultType uint8) *lgNode {
+	node := new(lgNode)
 	node.Feature = feature
 	node.Flags = missingType | defaultType
 	node.Threshold = threshold

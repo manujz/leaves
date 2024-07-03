@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dmitryikh/leaves/internal/pickle"
-	"github.com/dmitryikh/leaves/transformation"
+	"github.com/manujz/leaves/internal/pickle"
+	"github.com/manujz/leaves/transformation"
 )
 
-func lgTreeFromSklearnDecisionTreeRegressor(tree pickle.SklearnDecisionTreeRegressor, scale float64, base float64) (lgTree, error) {
-	t := lgTree{}
+func lgTreeFromSklearnDecisionTreeRegressor(tree pickle.SklearnDecisionTreeRegressor, scale float64, base float64) (*lgTree, error) {
+	t := new(lgTree)
 	// no support for categorical features in sklearn trees
 	t.nCategorical = 0
 
@@ -31,7 +31,7 @@ func lgTreeFromSklearnDecisionTreeRegressor(tree pickle.SklearnDecisionTreeRegre
 	if numNodes == 0 {
 		// special case
 		// we mimic decision rule but left and right childs lead to the same result
-		t.nodes = make([]lgNode, 0, 1)
+		t.nodes = make([]*lgNode, 0, 1)
 		node := numericalNode(0, 0, 0.0, 0)
 		node.Flags |= leftLeaf
 		node.Flags |= rightLeaf
@@ -43,8 +43,8 @@ func lgTreeFromSklearnDecisionTreeRegressor(tree pickle.SklearnDecisionTreeRegre
 	}
 
 	// Numerical only
-	createNode := func(idx int) (lgNode, error) {
-		node := lgNode{}
+	createNode := func(idx int) (*lgNode, error) {
+		node := new(lgNode)
 		refNode := &tree.Tree.Nodes[idx]
 		missingType := uint8(0)
 		defaultType := uint8(0)
@@ -65,7 +65,7 @@ func lgTreeFromSklearnDecisionTreeRegressor(tree pickle.SklearnDecisionTreeRegre
 	origNodeIdxStack := make([]uint32, 0, numNodes)
 	convNodeIdxStack := make([]uint32, 0, numNodes)
 	visited := make([]bool, tree.Tree.NNodes)
-	t.nodes = make([]lgNode, 0, numNodes)
+	t.nodes = make([]*lgNode, 0, numNodes)
 	node, err := createNode(0)
 	if err != nil {
 		return t, err
@@ -158,7 +158,7 @@ func SKEnsembleFromReader(reader *bufio.Reader, loadTransformation bool) (*Ensem
 		return nil, fmt.Errorf("unknown initial estimator \"%s\"", gbdt.InitEstimator.Name)
 	}
 
-	e.Trees = make([]lgTree, 0, gbdt.NEstimators*gbdt.NClasses)
+	e.Trees = make([]*lgTree, 0, gbdt.NEstimators*gbdt.NClasses)
 	for i := 0; i < gbdt.NEstimators; i++ {
 		for j := 0; j < e.nRawOutputGroups; j++ {
 			treeNum := i*e.nRawOutputGroups + j

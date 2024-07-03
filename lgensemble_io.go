@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dmitryikh/leaves/transformation"
-	"github.com/dmitryikh/leaves/util"
+	"github.com/manujz/leaves/transformation"
+	"github.com/manujz/leaves/util"
 )
 
 type lgEnsembleJSON struct {
@@ -100,8 +100,8 @@ var stringToMissingType = map[string]uint8{
 	"NaN":  missingNan,
 }
 
-func lgTreeFromReader(reader *bufio.Reader) (lgTree, error) {
-	t := lgTree{}
+func lgTreeFromReader(reader *bufio.Reader) (*lgTree, error) {
+	t := new(lgTree)
 	params, err := util.ReadParamsUntilBlank(reader)
 	if err != nil {
 		return t, err
@@ -168,8 +168,8 @@ func lgTreeFromReader(reader *bufio.Reader) (lgTree, error) {
 		}
 	}
 
-	createNumericalNode := func(idx int32) (lgNode, error) {
-		node := lgNode{}
+	createNumericalNode := func(idx int32) (*lgNode, error) {
+		node := new(lgNode)
 		missingType, err := convertMissingType(decisionTypes[idx])
 		if err != nil {
 			return node, err
@@ -190,8 +190,8 @@ func lgTreeFromReader(reader *bufio.Reader) (lgTree, error) {
 		return node, nil
 	}
 
-	createCategoricalNode := func(idx int32) (lgNode, error) {
-		node := lgNode{}
+	createCategoricalNode := func(idx int32) (*lgNode, error) {
+		node := new(lgNode)
 		missingType, err := convertMissingType(decisionTypes[idx])
 		if err != nil {
 			return node, err
@@ -232,7 +232,7 @@ func lgTreeFromReader(reader *bufio.Reader) (lgTree, error) {
 		}
 		return node, nil
 	}
-	createNode := func(idx int32) (lgNode, error) {
+	createNode := func(idx int32) (*lgNode, error) {
 		if decisionTypes[idx]&1 > 0 {
 			return createCategoricalNode(idx)
 		}
@@ -241,7 +241,7 @@ func lgTreeFromReader(reader *bufio.Reader) (lgTree, error) {
 	origNodeIdxStack := make([]uint32, 0, numNodes)
 	convNodeIdxStack := make([]uint32, 0, numNodes)
 	visited := make([]bool, numNodes)
-	t.nodes = make([]lgNode, 0, numNodes)
+	t.nodes = make([]*lgNode, 0, numNodes)
 	node, err := createNode(0)
 	if err != nil {
 		return t, err
@@ -379,7 +379,7 @@ func LGEnsembleFromReader(reader *bufio.Reader, loadTransformation bool) (*Ensem
 		}
 	}
 
-	e.Trees = make([]lgTree, 0, nTrees)
+	e.Trees = make([]*lgTree, 0, nTrees)
 	for i := 0; i < nTrees; i++ {
 		tree, err := lgTreeFromReader(reader)
 		if err != nil {
@@ -437,8 +437,8 @@ func unmarshalNode(raw []byte) (interface{}, error) {
 }
 
 // unmarshalTree unmarshal tree data from JSON raw data and convert it to `lgTree` structure
-func unmarshalTree(raw []byte) (lgTree, error) {
-	t := lgTree{}
+func unmarshalTree(raw []byte) (*lgTree, error) {
+	t := new(lgTree)
 
 	treeJSON := &lgTreeJSON{}
 	err := json.Unmarshal(raw, treeJSON)
@@ -468,8 +468,8 @@ func unmarshalTree(raw []byte) (lgTree, error) {
 		return t, nil
 	}
 
-	createNumericalNode := func(nodeJSON *lgNodeJSON) (lgNode, error) {
-		node := lgNode{}
+	createNumericalNode := func(nodeJSON *lgNodeJSON) (*lgNode, error) {
+		node := new(lgNode)
 		missingType, isFound := stringToMissingType[nodeJSON.MissingType]
 		if !isFound {
 			return node, fmt.Errorf("unknown missing_type '%s'", nodeJSON.MissingType)
@@ -496,8 +496,8 @@ func unmarshalTree(raw []byte) (lgTree, error) {
 		return node, nil
 	}
 
-	createCategoricalNode := func(nodeJSON *lgNodeJSON) (lgNode, error) {
-		node := lgNode{}
+	createCategoricalNode := func(nodeJSON *lgNodeJSON) (*lgNode, error) {
+		node := new(lgNode)
 		missingType, isFound := stringToMissingType[nodeJSON.MissingType]
 		if !isFound {
 			return node, fmt.Errorf("unknown missing_type '%s'", nodeJSON.MissingType)
@@ -556,13 +556,13 @@ func unmarshalTree(raw []byte) (lgTree, error) {
 		}
 		return node, nil
 	}
-	createNode := func(nodeJSON *lgNodeJSON) (lgNode, error) {
+	createNode := func(nodeJSON *lgNodeJSON) (*lgNode, error) {
 		if nodeJSON.DecisionType == "==" {
 			return createCategoricalNode(nodeJSON)
 		} else if nodeJSON.DecisionType == "<=" {
 			return createNumericalNode(nodeJSON)
 		} else {
-			return lgNode{}, fmt.Errorf("unknown decision type '%s'", nodeJSON.DecisionType)
+			return new(lgNode), fmt.Errorf("unknown decision type '%s'", nodeJSON.DecisionType)
 		}
 	}
 
@@ -578,7 +578,7 @@ func unmarshalTree(raw []byte) (lgTree, error) {
 		return t, fmt.Errorf("unexpected type of Root: %T", treeJSON.Root)
 	}
 	// NOTE: we rely on fact that t.nodes won't be reallocated (`parentPtr` points to its data)
-	t.nodes = make([]lgNode, 0, numNodes)
+	t.nodes = make([]*lgNode, 0, numNodes)
 
 	for len(stack) > 0 {
 		stackData := stack[len(stack)-1]
@@ -657,7 +657,7 @@ func LGEnsembleFromJSON(reader io.Reader, loadTransformation bool) (*Ensemble, e
 		return nil, fmt.Errorf("wrong number of trees (%d) for number of class (%d)", nTrees, e.nRawOutputGroups)
 	}
 
-	e.Trees = make([]lgTree, 0, nTrees)
+	e.Trees = make([]*lgTree, 0, nTrees)
 	for i := 0; i < nTrees; i++ {
 		tree, err := unmarshalTree(data.Trees[i])
 		if err != nil {
