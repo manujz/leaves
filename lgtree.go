@@ -3,7 +3,7 @@ package leaves
 import (
 	"math"
 
-	"github.com/dmitryikh/leaves/util"
+	"github.com/manujz/leaves/util"
 )
 
 const (
@@ -28,7 +28,7 @@ type lgNode struct {
 }
 
 type lgTree struct {
-	nodes         []lgNode
+	nodes         []*lgNode
 	leafValues    []float64
 	catBoundaries []uint32
 	catThresholds []uint32
@@ -77,8 +77,8 @@ func (t *lgTree) predict(fvals []float64) (float64, uint32) {
 	}
 	idx := uint32(0)
 	for {
-		node := &t.nodes[idx]
-		left := t.decision(node, fvals[node.Feature])
+		node := t.nodes[idx]
+		left := fvals[node.Feature] <= node.Threshold
 		if left {
 			if node.Flags&leftLeaf > 0 {
 				return t.leafValues[node.Left], node.Left
@@ -116,16 +116,16 @@ func isZero(fval float64) bool {
 	return (fval > -zeroThreshold && fval <= zeroThreshold)
 }
 
-func categoricalNode(feature uint32, missingType uint8, threshold uint32, catType uint8) lgNode {
-	node := lgNode{}
+func categoricalNode(feature uint32, missingType uint8, threshold uint32, catType uint8) *lgNode {
+	node := new(lgNode)
 	node.Feature = feature
 	node.Flags = categorical | missingType | catType
 	node.Threshold = float64(threshold)
 	return node
 }
 
-func numericalNode(feature uint32, missingType uint8, threshold float64, defaultType uint8) lgNode {
-	node := lgNode{}
+func numericalNode(feature uint32, missingType uint8, threshold float64, defaultType uint8) *lgNode {
+	node := new(lgNode)
 	node.Feature = feature
 	node.Flags = missingType | defaultType
 	node.Threshold = threshold

@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/dmitryikh/leaves/mat"
-	"github.com/dmitryikh/leaves/transformation"
-	"github.com/dmitryikh/leaves/util"
+	"github.com/manujz/leaves/mat"
+	"github.com/manujz/leaves/transformation"
+	"github.com/manujz/leaves/util"
 )
 
 func isFileExists(filename string) bool {
@@ -944,7 +944,6 @@ func TestGenlinFMTPPoisson(t *testing.T) {
 		t.Errorf("different predictions: %s", err.Error())
 	}
 }
-
 
 func TestGenlinFMTPGamma(t *testing.T) {
 	testPath := filepath.Join("testdata", "genlin_fmtp_gamma_AvgClaimAmount_features.tsv")

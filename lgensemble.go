@@ -1,12 +1,12 @@
 package leaves
 
 import (
-	"github.com/dmitryikh/leaves/util"
+	"github.com/manujz/leaves/util"
 )
 
 // lgEnsemble is LightGBM model (ensemble of trees)
 type lgEnsemble struct {
-	Trees            []lgTree
+	Trees            []*lgTree
 	MaxFeatureIdx    int
 	nRawOutputGroups int
 	// lgEnsemble suits for different models from different packages (ex., LightGBM gbrt & sklearn gbrt)
