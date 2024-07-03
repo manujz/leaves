@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/dmitryikh/leaves/transformation"
+	"github.com/manujz/leaves/transformation"
 )
 
 // BatchSize for parallel task
@@ -276,9 +276,12 @@ func (e *Ensemble) NFeatures() int {
 // NLeaves returns number of leaves in each tree of the ensemble. Returned
 // vector has size NRawOutputGroups() * NEstimators(). For example to get number
 // of leaves in group groupID for estimator estimatorID:
-//   NLeaves()[groupID*NEstimators() + estimatorID].
+//
+//	NLeaves()[groupID*NEstimators() + estimatorID].
+//
 // In case of NRawOutputGroups() == 1 (binary classification or regression):
-//   NLeaves()[estimatorID]
+//
+//	NLeaves()[estimatorID]
 func (e *Ensemble) NLeaves() []int {
 	return e.ensembleBaseInterface.NLeaves()
 }
