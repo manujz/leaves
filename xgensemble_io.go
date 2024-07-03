@@ -50,8 +50,8 @@ func xgTreeFromTreeModel(origTree *xgbin.TreeModel, numFeatures uint32) (lgTree,
 		return t, nil
 	}
 
-	createNode := func(origNode *xgbin.Node) (lgNode, error) {
-		node := lgNode{}
+	createNode := func(origNode *xgbin.Node) (*lgNode, error) {
+		node := new(lgNode)
 		// count nan as missing value
 		// NOTE: this differs with XGBosst realization: could be a problem
 		missingType := uint8(missingNan)
@@ -84,7 +84,7 @@ func xgTreeFromTreeModel(origTree *xgbin.TreeModel, numFeatures uint32) (lgTree,
 	origNodeIdxStack := make([]uint32, 0, numNodes)
 	convNodeIdxStack := make([]uint32, 0, numNodes)
 	visited := make([]bool, numNodes)
-	t.nodes = make([]lgNode, 0, numNodes)
+	t.nodes = make([]*lgNode, 0, numNodes)
 	node, err := createNode(&origTree.Nodes[0])
 	if err != nil {
 		return t, err
