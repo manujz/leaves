@@ -2,4 +2,4 @@ module github.com/manujz/leaves
 
 go 1.12
 
-replace github.com/dmitryikh/leaves master => github.com/manujz/leaves master
+replace github.com/dmitryikh/leaves remove_categorical_decision => github.com/manujz/leaves remove_categorical_decision
